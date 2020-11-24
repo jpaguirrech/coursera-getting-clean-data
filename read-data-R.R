@@ -229,3 +229,133 @@ data <-read.fwf("WeeklySST.txt", widths=c(14,5,8,5,8,5,8,5,8), header = FALSE, s
 sum(data[,4])
 
 ##### Week 3
+## subsetting review
+
+set.seed(13435)
+X<- data.frame("var1"=sample(1:5),"var2"=sample(6:10),"var3"=sample(11:15))
+X<-x[sample(1:5),];X$var[c(1,3)] = NA
+X
+
+X[(X$var1 <= 3 & X$var3 >11),]
+
+X[order(X$var1,X$var3),]
+
+## using plyr library
+library(plyr)
+arrange(X,var1)
+arrange(x,desc(var1))
+##adding rows
+X$var4<- rnorm(5)
+X
+## other way to do it
+Y<-cbind(X,rnorm(5))
+Y
+
+## getting data from the web.
+if(file.exists("/.data")){dir.create("./data")}
+fileUrl<- "https://data.baltimorecity.gov/api/views/k5ry-ef3g/rows.csv"
+download.file(fileUrl, destfile = "./data/restaurants.csv", method = "curl")
+restData<- read.csv("./data/restaurants.csv")
+
+## look a bit
+head(restData,n=3)
+tail(restData, n=3)
+summary(restData)
+str(restData)
+quantile(restData$councilDistrict,na.rm=TRUE)
+quantile(restData$councilDistrict,probs=c(0.5,0.75,0.9))
+table(restData$zipCode, useNA = "ifany") ##here is important useNA = "ifany" to make sure you are not missing NA values.
+table(restData$councilDistrict, restData$zipCode)
+## check for missing values
+sum(is.na(restData$councilDistrict))
+any(is.na(restData$councilDistrict))
+all(restData$zipCode>0)
+## [1] FALSE  return false beccause one of the zipcodes is negative
+
+## row and columns sums
+colSums(is.na(restData))
+all(colSums(is.na(restData))==0)
+
+## values with specific characteristics
+table(restData$zipCode %in% c("21212")) ## you can also use == insted %in%
+table(restData$zipCode %in% c("21212","21213")) ## the colon is used like "or"
+restData[restData$zipCode %in% c("21212","21213"),]
+
+## Cross tabs
+data("UCBAdmissions")
+DF=as.data.frame(UCBAdmissions)
+summary(DF)
+
+xt<- xtabs(Freq ~ Gender + Admit, data=DF)
+xt
+
+## Flat tables
+warpbreaks$replicate <-rep(1:9, len =54)
+xt=xtabs(breaks ~.,data=warpbreaks)
+xt
+## summary of the flat table 
+ftable(xt)
+
+## Size of the data set 
+fakeData = rnorm(1e5)
+object.size(fakeData) ## give you the size in bytes
+
+print(object.size(fakeData),units = "Mb")
+
+### Creating new variables
+## creating sequences
+s1 <- seq(1,10,by=2); s1
+s2<- seq(1,10,length=3); s2
+x<-c(1,3,8,25,100); seq(along =x) ## this is to create a index for the vector x
+
+## subsetting variables
+restData$nearMe = restData$neighborhood %in% c("Roland Park","Homeland")
+table(restData$nearMe)
+
+## creating binary variables
+restData$zipWrong = ifelse(restData$zipCode<0, TRUE, FALSE)
+table(restData$zipWrong, restData$zipCode<0)
+
+## Easier cutting
+library(Hmisc)
+
+## reshaping data
+library(reshape2)
+head(mtcars)
+
+mtcars$carname<-rownames(mtcars)
+## creating id variables and measure values
+carMelt<- melt(mtcars,id=c("carname","gear","cyl"), measure.vars = c("mpg","hp"))
+head(carMelt, n=3)
+
+## casting data frames change something in the dataframe
+cylData<-dcast(carMelt,cyl~variable)
+cylData
+
+##cyl mpg hp
+##1   4  11 11
+##2   6   7  7
+##3   8  14 14
+
+cylData<- dcast(carMelt, cyl~variable,mean)
+cylData
+
+##cyl      mpg        hp
+##1   4 26.66364  82.63636
+##2   6 19.74286 122.28571
+##3   8 15.10000 209.21429
+
+## Merging Data
+if(!file.exists("./data")){dir.create("./data")}
+fileUrl1="https://dl.dropboxusercontent/u/7710864/data/reviews-apr29.csv"
+fileUrl2="https://dl.dropboxusercontent/u/7710864/data/solutions-apr29.csv"
+download.file(fileUrl1="./data/reviews.csv", method="curl")
+download.file(fileUrl2="./data/solutions.csv", method = "curl")
+reviews =read.csv("./data/reviews.csv"); solutions<- read.csv("./data/solutions.csv")
+head(reviews,2)
+
+## Merging
+mergeData = merge(reviews,solutions,by.x="solution_id",by.y="id", all=TRUE)
+head(mergeData)
+
+## is possible to merge all columns with common names
